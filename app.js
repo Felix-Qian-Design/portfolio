@@ -268,90 +268,43 @@ const reopen = document.querySelector('.work-index');
 const workTitle = document.querySelector('#work-title');
 
 function prepareCurtain() {
-  let visible = false;
-  let browsing = false;
-  let hovering = false;
-  let holdTimer;
-  let holdStart;
-  let remaining = 3000;
-
-  function finishOpening(selection) {
+  function finishOpening() {
     curtain.hidden = true;
     curtain.inert = false;
     workSection.classList.remove('is-opening');
-    if (selection) {
-      workSection.scrollIntoView({ block: 'start', behavior: 'instant' });
-      workTitle.focus({ preventScroll: true });
-    }
+    workSection.scrollIntoView({ block: 'start', behavior: 'instant' });
+    workTitle.focus({ preventScroll: true });
   }
   function openWork(selection) {
-    if (!browsing) return;
-    browsing = false;
-    clearTimeout(holdTimer);
-    holdTimer = undefined;
-    observer.unobserve(curtain);
+    if (curtain.hidden || curtain.inert) return;
     curtain.inert = true;
-    if (selection) selectCategory(selection);
+    selectCategory(selection);
     workSection.classList.remove('is-closed');
     workContent.inert = false;
     if (motion.matches) {
-      finishOpening(selection);
+      finishOpening();
       return;
     }
     workSection.classList.add('is-opening');
-    setTimeout(() => finishOpening(selection), 1080);
+    setTimeout(finishOpening, 1080);
   }
-  function checkHold() {
-    const focusInCategories = curtainCategories.contains(document.activeElement);
-    if (browsing && visible && !document.hidden && !hovering && !focusInCategories) {
-      if (holdTimer !== undefined) return;
-      holdStart = performance.now();
-      holdTimer = setTimeout(() => openWork(), remaining);
-    } else if (holdTimer !== undefined) {
-      clearTimeout(holdTimer);
-      holdTimer = undefined;
-      remaining = Math.max(0, remaining - (performance.now() - holdStart));
-    }
-  }
-  const observer = new IntersectionObserver(([entry]) => {
-    visible = entry.intersectionRatio >= .48;
-    checkHold();
-  }, { threshold: .48, rootMargin: '-58px 0px 0px' });
-
   function showCurtain() {
-    browsing = true;
-    visible = false;
-    hovering = false;
-    remaining = 3000;
     for (const button of curtainCategories.children) button.classList.remove('is-selected');
     workSection.classList.add('is-closed');
     workContent.inert = true;
     curtain.hidden = false;
-    observer.observe(curtain);
   }
   for (const category of categories.slice(1)) {
     const button = document.createElement('button');
     button.type = 'button';
     button.setAttribute('aria-label', category);
     button.addEventListener('click', () => {
-      if (!browsing) return;
       button.classList.add('is-selected');
       openWork(category);
     });
     curtainCategories.append(button);
   }
-  curtainCategories.addEventListener('pointerenter', (event) => {
-    if (event.pointerType === 'touch') return;
-    hovering = true;
-    checkHold();
-  });
-  curtainCategories.addEventListener('pointerleave', () => {
-    hovering = false;
-    checkHold();
-  });
-  curtainCategories.addEventListener('focusin', checkHold);
-  curtainCategories.addEventListener('focusout', () => queueMicrotask(checkHold));
-  document.addEventListener('visibilitychange', checkHold);
+  curtain.querySelector('.curtain-all').addEventListener('click', () => openWork('全部'));
   reopen.hidden = false;
   reopen.addEventListener('click', () => {
     if (!curtain.hidden) return;
@@ -361,13 +314,4 @@ function prepareCurtain() {
   });
   showCurtain();
 }
-if ('IntersectionObserver' in window) {
-  workSection.classList.add('is-closed');
-  workContent.inert = true;
-  curtain.hidden = false;
-  Promise.all([...curtain.querySelectorAll('img')].map((img) => img.decode())).then(prepareCurtain).catch(() => {
-    curtain.hidden = true;
-    workSection.classList.remove('is-closed');
-    workContent.inert = false;
-  });
-}
+prepareCurtain();
