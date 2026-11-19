@@ -1,9 +1,15 @@
 const cover = document.querySelector('.cover');
 const screenButton = document.querySelector('.light-control');
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
+const mobileScreen = matchMedia('(max-width: 760px)');
+const touchScreen = matchMedia('(hover: none) and (pointer: coarse)');
+const isMobile = mobileScreen.matches || touchScreen.matches;
+const bootDuration = 780;
 let pinned = false;
 let overCover = false;
 let bootTimer;
+let autoScreenTimer;
+let tappedScreen = false;
 const lampDarkness = cover.querySelector('.lamp-darkness');
 const lampGlow = cover.querySelector('.lamp-glow');
 let lampReady = false;
@@ -16,12 +22,19 @@ function finishLamp() {
   if (overCover || pinned || screenButton.matches(':focus-visible')) {
     setCoverPosition(...(pointerPosition ?? []));
     powerOn();
+  } else if (isMobile && !motion.matches && !tappedScreen) {
+    setCoverPosition();
+    powerOn();
+    autoScreenTimer = setTimeout(() => {
+      autoScreenTimer = undefined;
+      if (!pinned && !overCover) powerOff();
+    }, bootDuration + 1300);
   }
 }
 
 function animateLamp() {
-  const duration = 2900;
-  const ignition = 360;
+  const duration = isMobile ? 1850 : 2900;
+  const ignition = isMobile ? 180 : 360;
   let elapsed = 0;
   let previous;
   function frame(now) {
@@ -46,7 +59,8 @@ function animateLamp() {
   requestAnimationFrame(frame);
 }
 
-const pageLoaded = document.readyState === 'complete'
+const coverLoaded = Promise.allSettled([...cover.querySelectorAll('.cover-art img')].map(img => img.decode()));
+const pageLoaded = isMobile || document.readyState === 'complete'
   ? Promise.resolve()
   : new Promise(resolve => window.addEventListener('load', resolve, { once: true }));
 if (motion.matches) {
@@ -55,9 +69,7 @@ if (motion.matches) {
   motion.addEventListener('change', () => {
     if (motion.matches) finishLamp();
   });
-  pageLoaded.then(() => Promise.allSettled(
-    [...cover.querySelectorAll(':scope > img')].map(img => img.decode())
-  )).then(() => {
+  Promise.all([pageLoaded, coverLoaded]).then(() => {
     if (!lampReady) animateLamp();
   });
 }
@@ -86,7 +98,7 @@ function powerOn() {
     return;
   }
   cover.classList.add('is-glitching');
-  bootTimer = setTimeout(finish, 780);
+  bootTimer = setTimeout(finish, bootDuration);
 }
 function powerOff() {
   clearTimeout(bootTimer);
@@ -104,10 +116,11 @@ cover.addEventListener('pointermove', (event) => {
   setCoverPosition(...pointerPosition);
   powerOn();
 });
-cover.addEventListener('pointerleave', () => {
+cover.addEventListener('pointerleave', (event) => {
+  if (event.pointerType === 'touch') return;
   overCover = false;
   pointerPosition = undefined;
-  if (!pinned && !screenButton.matches(':focus-visible')) powerOff();
+  if (!pinned && autoScreenTimer === undefined && !screenButton.matches(':focus-visible')) powerOff();
 });
 screenButton.addEventListener('focus', () => {
   if (!screenButton.matches(':focus-visible')) return;
@@ -115,9 +128,12 @@ screenButton.addEventListener('focus', () => {
   powerOn();
 });
 screenButton.addEventListener('blur', () => {
-  if (!pinned && !overCover) powerOff();
+  if (!pinned && !overCover && autoScreenTimer === undefined) powerOff();
 });
 screenButton.addEventListener('click', () => {
+  tappedScreen = true;
+  clearTimeout(autoScreenTimer);
+  autoScreenTimer = undefined;
   pinned = !pinned;
   screenButton.setAttribute('aria-pressed', String(pinned));
   if (pinned) {
@@ -154,7 +170,7 @@ function checkIntroPosition() {
   if (visible <= 0 && !hasPlayed) art.classList.remove('is-playing');
 }
 
-Promise.all([...art.querySelectorAll('img')].map((image) => image.decode())).then(() => {
+coverLoaded.then(() => Promise.all([...art.querySelectorAll('img')].map(image => image.decode()))).then(() => {
   if (!motion.matches) art.classList.add('is-ready');
   window.addEventListener('scroll', checkIntroPosition, { passive: true });
   window.addEventListener('resize', checkIntroPosition);
