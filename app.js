@@ -363,3 +363,14 @@ function prepareCurtain() {
   showCurtain();
 }
 prepareCurtain();
+
+const portfolioArtwork = '.cover, .intro-art, .work-curtain, .project-visual, #case-images figure';
+function preventArtworkSave(event) {
+  if (event.target instanceof Element &&
+      event.target.closest(portfolioArtwork) &&
+      !event.target.closest('a')) {
+    event.preventDefault();
+  }
+}
+document.addEventListener('contextmenu', preventArtworkSave);
+document.addEventListener('dragstart', preventArtworkSave);
