@@ -47,12 +47,15 @@ function finishLamp(playAutomaticScreen = true) {
     setCoverPosition(...(pointerPosition ?? []));
     powerOn();
   } else if (playAutomaticScreen && isMobile && !motion.matches && !tappedScreen) {
-    setCoverPosition();
-    powerOn();
-    autoScreenTimer = setTimeout(() => {
-      autoScreenTimer = undefined;
-      if (!pinned && !overCover) powerOff();
-    }, bootDuration + 1300);
+    waitForArtwork(litCover).then(ready => {
+      if (!ready || tappedScreen || pinned || overCover || motion.matches) return;
+      setCoverPosition();
+      powerOn();
+      autoScreenTimer = setTimeout(() => {
+        autoScreenTimer = undefined;
+        if (!pinned && !overCover) powerOff();
+      }, bootDuration + 1300);
+    });
   }
 }
 
@@ -83,7 +86,7 @@ function animateLamp() {
   requestAnimationFrame(frame);
 }
 
-const coverLoaded = Promise.all([waitForArtwork(litCover), waitForArtwork(darkCover)]);
+const darkCoverLoaded = waitForArtwork(darkCover);
 if (motion.matches) {
   finishLamp(false);
 } else {
@@ -92,10 +95,10 @@ if (motion.matches) {
   motion.addEventListener('change', () => {
     if (motion.matches) finishLamp(false);
   });
-  coverLoaded.then(results => {
+  darkCoverLoaded.then(ready => {
     clearTimeout(revealDeadline);
     if (lampReady) return;
-    if (results.every(Boolean)) animateLamp();
+    if (ready) animateLamp();
     else finishLamp(false);
   });
 }

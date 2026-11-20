@@ -4,27 +4,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>
-if (matchMedia('(max-width: 760px), (hover: none) and (pointer: coarse)').matches) {
-  history.scrollRestoration = 'manual';
-  // Clear a shared Works fragment before the browser can scroll to that section.
-  if (location.hash === '#work') {
-    history.replaceState(history.state, '', location.pathname + location.search);
-  }
+const mobileStart = matchMedia('(max-width: 760px), (hover: none) and (pointer: coarse)').matches;
+if (mobileStart) history.scrollRestoration = 'manual';
+if (location.hash === '#work' || (mobileStart && location.hash === '#portfolio-work')) {
+  history.replaceState(history.state, '', location.pathname + location.search);
 }
 </script>
 <meta name="description" content="钱富裕的视觉品牌设计作品集，涵盖 IP 形象、活动视觉、AIGC、文创包装与项目提案。">
 <title>钱富裕 · 视觉品牌设计作品集</title>
+<link rel="preload" as="image" media="(max-width: 760px)" imagesrcset="media/cover-off-960.webp?v=14 960w, media/cover-off-1440.webp?v=14 1440w" imagesizes="100vw" fetchpriority="high">
 <link rel="stylesheet" href="style.css?v=18">
-<script defer src="app.js?v=18"></script>
+<script defer src="app.js?v=19"></script>
 <noscript><style>.cover .lamp-darkness{display:none!important}</style></noscript>
 </head>
 <body>
-<header class="bar"><a class="brand" href="#home"><span class="mark">✦</span> 钱富裕 <span class="brand-en">/ DESIGN PORTFOLIO</span></a><nav aria-label="网站导航"><a href="#about">简介</a><a href="#work">作品</a><a href="#contact">联系</a></nav></header>
+<header class="bar"><a class="brand" href="#home"><span class="mark">✦</span> 钱富裕 <span class="brand-en">/ DESIGN PORTFOLIO</span></a><nav aria-label="网站导航"><a href="#about">简介</a><a href="#portfolio-work">作品</a><a href="#contact">联系</a></nav></header>
 <main id="home">
 <section class="cover is-lamp-starting" aria-label="钱富裕 2026 视觉品牌设计作品集">
 <picture class="cover-art">
 <source media="(max-width: 760px)" srcset="media/cover-960.webp?v=14 960w, media/cover-1440.webp?v=14 1440w" sizes="100vw">
-<img src="media/cover-latest.webp?v=14" width="3840" height="2160" alt="原版作品集封面：霓虹色 Portfolio 字样与显示着 2026 作品集的复古电脑" decoding="async" fetchpriority="high">
+<img src="media/cover-latest.webp?v=14" width="3840" height="2160" alt="原版作品集封面：霓虹色 Portfolio 字样与显示着 2026 作品集的复古电脑" decoding="async" fetchpriority="low">
 </picture>
 <picture class="cover-art cover-off" aria-hidden="true">
 <source media="(max-width: 760px)" srcset="media/cover-off-960.webp?v=14 960w, media/cover-off-1440.webp?v=14 1440w" sizes="100vw">
@@ -62,7 +61,7 @@ if (matchMedia('(max-width: 760px), (hover: none) and (pointer: coarse)').matche
 </div>
 <button id="replay" class="replay" type="button" hidden>重播动效</button>
 </section>
-<section id="work" class="work-section" aria-labelledby="work-title">
+<section id="portfolio-work" class="work-section" aria-labelledby="work-title">
 <div class="work-curtain" hidden>
 <picture class="responsive-art"><source media="(max-width: 760px), (max-width: 1024px) and (pointer: coarse)" srcset="media/mobile/project-back.webp"><img class="project-back" loading="lazy" fetchpriority="low" src="media/project-back.webp?v=14" width="2880" height="1620" alt=""></picture>
 <picture class="responsive-art"><source media="(max-width: 760px), (max-width: 1024px) and (pointer: coarse)" srcset="media/mobile/project-lights.webp"><img class="project-lights" loading="lazy" fetchpriority="low" src="media/project-lights.webp?v=14" width="2880" height="192" alt=""></picture>
