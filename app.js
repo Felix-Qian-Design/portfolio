@@ -207,9 +207,9 @@ motion.addEventListener('change', () => {
 
 const cases = [
   { title: '鼎文小鲲鹏', category: 'IP 形象与衍生', cover: 'p4', pages: [4, 5, 6], description: '校园吉祥物形象迭代，从角色设定、表情与三视图延展到场景及衍生应用。' },
-  { title: '校园活动视觉', category: '活动视觉', cover: 'campus-event-cover', pages: [7], description: '围绕开学礼、校园活动与赛事主题，设计主视觉、导览、展板与其他场景物料。' },
+  { title: '校园活动视觉', category: '活动视觉', cover: 'campus-event-cover', mobileCover: true, pages: [7], description: '围绕开学礼、校园活动与赛事主题，设计主视觉、导览、展板与其他场景物料。' },
   { title: '趣探运动会AIGC全链路生成', category: 'AIGC 应用', categoryLabel: 'AIGC应用', featured: true, cover: 'sports-day-cover', pages: [33], description: '从运动会主视觉和角色设计，到赛事场景与文创衍生，展示趣探运动会的 AIGC 全链路生成。' },
-  { title: '七大学院徽章', category: '文创与包装', cover: 'academy-badge-cover', pages: [11], description: '用学院符号、宇宙元素与鲲鹏 IP 建立系列徽章的设计语言。' },
+  { title: '七大学院徽章', category: '文创与包装', cover: 'academy-badge-cover', mobileCover: true, pages: [11], description: '用学院符号、宇宙元素与鲲鹏 IP 建立系列徽章的设计语言。' },
   { title: '鼎文咖啡 VI', category: '文创与包装', cover: 'p14', pages: [12, 13, 14, 15, 16], description: '将咖啡工序提炼为几何图形，并应用到品牌视觉、包装和周边。' },
   { title: '校园主题插画', category: '文创与包装', cover: 't17', pages: [17], description: '从校园建筑与景观出发，结合学校育人素养关键词，创作可跨物料使用的主题插画。' },
   { title: '地产与商业品牌提案', category: '项目提案', cover: 'p19', pages: [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32], description: '收录地产和商业项目的提案视觉，包括标志、海报及空间展示。' },
@@ -260,10 +260,20 @@ function renderProjects(category) {
     visual.className = 'project-visual';
     const img = new Image();
     const updatedCover = project.cover === 't10';
-    img.src = 'media/' + project.cover + '.webp' + (updatedCover ? '?v=14' : '');
     img.alt = '';
     img.loading = 'lazy';
-    visual.append(img);
+    img.decoding = 'async';
+    if (project.mobileCover) {
+      const picture = document.createElement('picture');
+      const mobile = document.createElement('source');
+      mobile.media = '(max-width: 760px), (max-width: 1024px) and (pointer: coarse)';
+      mobile.srcset = 'media/mobile/' + project.cover + '.webp';
+      picture.append(mobile, img);
+      visual.append(picture);
+    } else {
+      visual.append(img);
+    }
+    img.src = 'media/' + project.cover + '.webp' + (updatedCover ? '?v=14' : '');
     const title = document.createElement('strong');
     title.textContent = project.title;
     const tag = document.createElement('small');
