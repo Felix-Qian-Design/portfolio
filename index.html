@@ -3,6 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+if (matchMedia('(max-width: 760px), (hover: none) and (pointer: coarse)').matches) {
+  history.scrollRestoration = 'manual';
+  // Clear a shared Works fragment before the browser can scroll to that section.
+  if (location.hash === '#work') {
+    history.replaceState(history.state, '', location.pathname + location.search);
+  }
+}
+</script>
 <meta name="description" content="钱富裕的视觉品牌设计作品集，涵盖 IP 形象、活动视觉、AIGC、文创包装与项目提案。">
 <title>钱富裕 · 视觉品牌设计作品集</title>
 <link rel="stylesheet" href="style.css?v=18">
