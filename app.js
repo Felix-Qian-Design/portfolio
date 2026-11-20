@@ -218,17 +218,29 @@ const filters = document.querySelector('#filters');
 const gallery = document.querySelector('#projects');
 const dialog = document.querySelector('#detail');
 
+const caseImageSizes = {"4":[2880,1620],"5":[2880,1620],"6":[2880,5027],"7":[2880,8313],"8":[2880,1923],"9":[2880,1920],"10":[2880,2300],"11":[2880,6782],"12":[2880,6889],"13":[2875,1617],"14":[2875,1617],"15":[2875,1617],"16":[2875,1593],"17":[2880,5019],"18":[2880,824],"19":[2880,1620],"20":[2880,1620],"21":[2880,1620],"22":[2880,1620],"23":[2880,1620],"24":[2880,1620],"25":[2880,1620],"26":[2880,1620],"27":[2880,1620],"28":[2880,1620],"29":[2880,1620],"30":[2880,1620],"31":[2880,1620],"32":[2880,1620]};
+
 function showCase(project) {
   document.querySelector('#case-category').textContent = project.category;
   document.querySelector('#case-title').textContent = project.title;
   document.querySelector('#case-description').textContent = project.description;
   document.querySelector('#case-images').replaceChildren(...project.pages.map((page, index) => {
     const figure = document.createElement('figure');
+    const picture = document.createElement('picture');
+    const mobile = document.createElement('source');
+    mobile.media = '(max-width: 760px), (max-width: 1024px) and (pointer: coarse)';
+    mobile.srcset = 'media/mobile/p' + page + '.webp';
     const img = new Image();
-    img.src = 'media/p' + page + '.webp';
+    const [width, height] = caseImageSizes[page];
+    img.width = width;
+    img.height = height;
     img.alt = project.title + '，作品图 ' + (index + 1);
-    img.loading = index > 1 ? 'lazy' : 'eager';
-    figure.append(img);
+    img.loading = index === 0 ? 'eager' : 'lazy';
+    img.fetchPriority = index === 0 ? 'high' : 'low';
+    img.decoding = 'async';
+    picture.append(mobile, img);
+    img.src = 'media/p' + page + '.webp';
+    figure.append(picture);
     return figure;
   }));
   dialog.showModal();
