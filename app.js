@@ -207,7 +207,7 @@ motion.addEventListener('change', () => {
 
 const cases = [
   { title: '鼎文小鲲鹏', category: 'IP 形象与衍生', cover: 'p4', pages: [4, 5, 6], description: '校园吉祥物形象迭代，从角色设定、表情与三视图延展到场景及衍生应用。' },
-  { title: '校园活动视觉', category: '活动视觉', cover: 't7', pages: [7, 8, 9], description: '围绕开学礼、校园活动与赛事主题，设计主视觉、导览、展板与其他场景物料。' },
+  { title: '校园活动视觉', category: '活动视觉', cover: 't7', pages: [7], description: '围绕开学礼、校园活动与赛事主题，设计主视觉、导览、展板与其他场景物料。' },
   { title: '游泳赛事主视觉', category: 'AIGC 应用', cover: 't10', pages: [10], description: '使用 AIGC 探索风格和氛围，结合人工筛选、二次创作与细化完成主视觉。' },
   { title: '七大学院徽章', category: '文创与包装', cover: 't11', pages: [11], description: '用学院符号、宇宙元素与鲲鹏 IP 建立系列徽章的设计语言。' },
   { title: '鼎文咖啡 VI', category: '文创与包装', cover: 'p14', pages: [12, 13, 14, 15, 16], description: '将咖啡工序提炼为几何图形，并应用到品牌视觉、包装和周边。' },
