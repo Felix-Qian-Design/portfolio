@@ -21,6 +21,38 @@ document.addEventListener('error', event => {
   for (const source of picture.querySelectorAll('source')) source.remove();
 }, true);
 
+function startArtwork(root) {
+  for (const element of root.querySelectorAll('[data-srcset], [data-src]')) {
+    if (element.dataset.srcset) {
+      element.srcset = element.dataset.srcset;
+      delete element.dataset.srcset;
+    }
+    if (element.dataset.src) {
+      element.src = element.dataset.src;
+      delete element.dataset.src;
+    }
+  }
+}
+
+function loadSectionArtwork(section) {
+  return new Promise(resolve => {
+    function load() {
+      startArtwork(section);
+      resolve();
+    }
+    if (!('IntersectionObserver' in window)) {
+      load();
+      return;
+    }
+    const observer = new IntersectionObserver(entries => {
+      if (!entries.some(entry => entry.isIntersecting)) return;
+      observer.disconnect();
+      load();
+    }, { rootMargin: '90px' });
+    observer.observe(section);
+  });
+}
+
 const cover = document.querySelector('.cover');
 const screenButton = document.querySelector('.light-control');
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -86,7 +118,15 @@ function animateLamp() {
   requestAnimationFrame(frame);
 }
 
+let releaseFirstArtwork;
+const firstArtwork = new Promise(resolve => { releaseFirstArtwork = resolve; });
 const darkCoverLoaded = waitForArtwork(darkCover);
+const artworkDeadline = setTimeout(releaseFirstArtwork, 3600);
+darkCoverLoaded.then(() => {
+  clearTimeout(artworkDeadline);
+  releaseFirstArtwork();
+});
+firstArtwork.then(() => startArtwork(litCover.parentElement));
 if (motion.matches) {
   finishLamp(false);
 } else {
@@ -199,7 +239,10 @@ function checkIntroPosition() {
   if (visible <= 0 && !hasPlayed) art.classList.remove('is-playing');
 }
 
-Promise.all([...art.querySelectorAll('img')].map(waitForArtwork)).then(results => {
+firstArtwork.then(() => loadSectionArtwork(art)).then(() => {
+  startArtwork(document.querySelector('.about-inner'));
+  return Promise.all([...art.querySelectorAll('img')].map(waitForArtwork));
+}).then(results => {
   if (!results.every(Boolean)) return;
   if (!motion.matches) art.classList.add('is-ready');
   window.addEventListener('scroll', checkIntroPosition, { passive: true });
@@ -252,12 +295,39 @@ const dialog = document.querySelector('#detail');
 const refreshedCasePages = new Set([6, 7, 10]);
 const caseImageSizes = {"4":[2880,1620],"5":[2880,1620],"6":[2160,3770],"7":[2160,6196],"8":[2880,1923],"9":[2880,1920],"10":[2880,2511],"11":[2880,6782],"12":[2880,6889],"13":[2875,1617],"14":[2875,1617],"15":[2875,1617],"16":[2875,1593],"17":[2880,5019],"18":[2880,824],"19":[2880,1620],"20":[2880,1620],"21":[2880,1620],"22":[2880,1620],"23":[2880,1620],"24":[2880,1620],"25":[2880,1620],"26":[2880,1620],"27":[2880,1620],"28":[2880,1620],"29":[2880,1620],"30":[2880,1620],"31":[2880,1620],"32":[2880,1620],"33":[1729,9028]};
 
+let caseTileObserver;
+dialog.addEventListener('close', () => caseTileObserver?.disconnect());
+
+const mobileCaseTiles = {"7":[["p7-1.webp",800,900],["p7-2.webp",800,900],["p7-3.webp",800,495]],"33":[["p33-1.webp",800,900],["p33-2.webp",800,900],["p33-3.webp",800,900],["p33-4.webp",800,900],["p33-5.webp",800,578]]};
+
 function showCase(project) {
   document.querySelector('#case-category').textContent = project.categoryLabel ?? project.category;
   document.querySelector('#case-title').textContent = project.title;
   document.querySelector('#case-description').textContent = project.description;
-  document.querySelector('#case-images').replaceChildren(...project.pages.map((page, index) => {
+  caseTileObserver?.disconnect();
+  const canObserveTiles = 'IntersectionObserver' in window;
+  const caseImages = document.querySelector('#case-images');
+  const useMobile = matchMedia(mobileArtworkMedia).matches;
+  const pieces = project.pages.flatMap(page =>
+    useMobile && mobileCaseTiles[page]
+      ? mobileCaseTiles[page].map(tile => ({ page, tile }))
+      : [{ page }]
+  );
+  caseImages.replaceChildren(...pieces.map(({ page, tile }, index) => {
     const figure = document.createElement('figure');
+    if (tile) {
+      const [name, width, height] = tile;
+      const img = new Image(width, height);
+      img.alt = project.title + '，作品图第 ' + (index + 1) + ' 段';
+      img.loading = index === 0 ? 'eager' : 'lazy';
+      img.fetchPriority = index === 0 ? 'high' : 'low';
+      img.decoding = 'async';
+      figure.className = 'case-slice';
+      figure.append(img);
+      if (index > 0 && canObserveTiles) img.dataset.src = 'media/mobile/' + name;
+      else img.src = 'media/mobile/' + name;
+      return figure;
+    }
     const picture = document.createElement('picture');
     const mobile = document.createElement('source');
     mobile.media = mobileArtworkMedia;
@@ -278,6 +348,17 @@ function showCase(project) {
   }));
   dialog.showModal();
   dialog.scrollTop = 0;
+  const pendingTiles = caseImages.querySelectorAll('.case-slice img[data-src]');
+  if (!pendingTiles.length) return;
+  caseTileObserver = new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      caseTileObserver.unobserve(entry.target);
+      entry.target.src = entry.target.dataset.src;
+      delete entry.target.dataset.src;
+    }
+  }, { root: dialog, rootMargin: '180px' });
+  for (const tile of pendingTiles) caseTileObserver.observe(tile);
 }
 function renderProjects(category) {
   gallery.classList.toggle('is-all', category === '全部');
@@ -389,6 +470,7 @@ function prepareCurtain() {
   showCurtain();
 }
 prepareCurtain();
+firstArtwork.then(() => loadSectionArtwork(curtain));
 
 const portfolioArtwork = '.cover, .intro-art, .work-curtain, .project-visual, #case-images figure';
 function preventArtworkSave(event) {

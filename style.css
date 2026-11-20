@@ -149,3 +149,6 @@ dialog{background:#111722;color:var(--ink);border:1px solid var(--rim);width:min
 }
 
 .responsive-art{display:contents}
+
+.case-content .case-slice{margin:0}
+.case-content .case-slice img{border-radius:0}
