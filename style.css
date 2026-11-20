@@ -7,14 +7,14 @@
 .intro-base,.intro-final,.intro-copy,.intro-copy img{inset:0}
 .intro-grip{inset:15.9722% 0 0 36.25%;opacity:0;transform-origin:90% 65%}
 .intro-copy img{opacity:0}
-.intro-copy img:nth-child(1){clip-path:inset(0 0 59% 0)}
-.intro-copy img:nth-child(2){clip-path:inset(41% 0 28% 0)}
-.intro-copy img:nth-child(3){clip-path:inset(72% 0 0 0)}
+.intro-copy picture:nth-child(1) img{clip-path:inset(0 0 59% 0)}
+.intro-copy picture:nth-child(2) img{clip-path:inset(41% 0 28% 0)}
+.intro-copy picture:nth-child(3) img{clip-path:inset(72% 0 0 0)}
 .intro-art.is-ready .intro-final{opacity:0}
 .intro-art.is-playing .intro-grip{animation:intro-swing 1.32s both}
 .intro-art.is-playing .intro-copy img{animation:intro-type .46s 1.36s both}
-.intro-art.is-playing .intro-copy img:nth-child(2){animation-delay:1.51s}
-.intro-art.is-playing .intro-copy img:nth-child(3){animation-delay:1.66s}
+.intro-art.is-playing .intro-copy picture:nth-child(2) img{animation-delay:1.51s}
+.intro-art.is-playing .intro-copy picture:nth-child(3) img{animation-delay:1.66s}
 .intro-art.is-playing .intro-final{animation:intro-freeze .16s 2.16s both}
 @keyframes intro-swing{
   0%{opacity:0;transform:translateX(108%) rotate(16deg)}
@@ -147,3 +147,5 @@ dialog{background:#111722;color:var(--ink);border:1px solid var(--rim);width:min
   -webkit-user-drag: none;
   user-select: none;
 }
+
+.responsive-art{display:contents}

@@ -1,3 +1,26 @@
+const mobileArtworkMedia = '(max-width: 760px), (max-width: 1024px) and (pointer: coarse)';
+
+function waitForArtwork(image) {
+  if (image.complete) return Promise.resolve(image.naturalWidth > 0);
+  return new Promise(resolve => {
+    function finish() {
+      image.removeEventListener('load', finish);
+      image.removeEventListener('error', finish);
+      resolve(image.naturalWidth > 0);
+    }
+    image.addEventListener('load', finish);
+    image.addEventListener('error', finish);
+  });
+}
+
+document.addEventListener('error', event => {
+  if (!(event.target instanceof HTMLImageElement)) return;
+  const image = event.target;
+  const picture = image.parentElement;
+  if (picture?.localName !== 'picture' || image.currentSrc === image.src) return;
+  for (const source of picture.querySelectorAll('source')) source.remove();
+}, true);
+
 const cover = document.querySelector('.cover');
 const screenButton = document.querySelector('.light-control');
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -5,6 +28,7 @@ const mobileScreen = matchMedia('(max-width: 760px)');
 const touchScreen = matchMedia('(hover: none) and (pointer: coarse)');
 const isMobile = mobileScreen.matches || touchScreen.matches;
 const bootDuration = 780;
+const [litCover, darkCover] = cover.querySelectorAll('.cover-art img');
 let pinned = false;
 let overCover = false;
 let bootTimer;
@@ -15,14 +39,14 @@ const lampGlow = cover.querySelector('.lamp-glow');
 let lampReady = false;
 let pointerPosition;
 
-function finishLamp() {
+function finishLamp(playAutomaticScreen = true) {
   if (lampReady) return;
   lampReady = true;
   cover.classList.remove('is-lamp-starting');
   if (overCover || pinned || screenButton.matches(':focus-visible')) {
     setCoverPosition(...(pointerPosition ?? []));
     powerOn();
-  } else if (isMobile && !motion.matches && !tappedScreen) {
+  } else if (playAutomaticScreen && isMobile && !motion.matches && !tappedScreen) {
     setCoverPosition();
     powerOn();
     autoScreenTimer = setTimeout(() => {
@@ -59,18 +83,20 @@ function animateLamp() {
   requestAnimationFrame(frame);
 }
 
-const coverLoaded = Promise.allSettled([...cover.querySelectorAll('.cover-art img')].map(img => img.decode()));
-const pageLoaded = isMobile || document.readyState === 'complete'
-  ? Promise.resolve()
-  : new Promise(resolve => window.addEventListener('load', resolve, { once: true }));
+const coverLoaded = Promise.all([waitForArtwork(litCover), waitForArtwork(darkCover)]);
 if (motion.matches) {
-  finishLamp();
+  finishLamp(false);
 } else {
+  // A stalled image must never leave the solid blackout over the page.
+  const revealDeadline = setTimeout(() => finishLamp(false), 4300);
   motion.addEventListener('change', () => {
-    if (motion.matches) finishLamp();
+    if (motion.matches) finishLamp(false);
   });
-  Promise.all([pageLoaded, coverLoaded]).then(() => {
-    if (!lampReady) animateLamp();
+  coverLoaded.then(results => {
+    clearTimeout(revealDeadline);
+    if (lampReady) return;
+    if (results.every(Boolean)) animateLamp();
+    else finishLamp(false);
   });
 }
 
@@ -86,7 +112,7 @@ function setCoverPosition(x = .5, y = .5) {
   cover.style.setProperty('--sy', clamp((y - .32) * 2.61) * 100 + '%');
 }
 function powerOn() {
-  if (!lampReady) return;
+  if (!lampReady || !litCover.naturalWidth) return;
   if (cover.classList.contains('is-powered') || cover.classList.contains('is-glitching')) return;
   const finish = () => {
     cover.style.setProperty('--powered', '1');
@@ -170,7 +196,8 @@ function checkIntroPosition() {
   if (visible <= 0 && !hasPlayed) art.classList.remove('is-playing');
 }
 
-coverLoaded.then(() => Promise.all([...art.querySelectorAll('img')].map(image => image.decode()))).then(() => {
+Promise.all([...art.querySelectorAll('img')].map(waitForArtwork)).then(results => {
+  if (!results.every(Boolean)) return;
   if (!motion.matches) art.classList.add('is-ready');
   window.addEventListener('scroll', checkIntroPosition, { passive: true });
   window.addEventListener('resize', checkIntroPosition);
@@ -207,9 +234,9 @@ motion.addEventListener('change', () => {
 
 const cases = [
   { title: '鼎文小鲲鹏', category: 'IP 形象与衍生', cover: 'p4', pages: [4, 5, 6], description: '校园吉祥物形象迭代，从角色设定、表情与三视图延展到场景及衍生应用。' },
-  { title: '校园活动视觉', category: '活动视觉', cover: 'campus-event-cover', mobileCover: true, pages: [7], description: '围绕开学礼、校园活动与赛事主题，设计主视觉、导览、展板与其他场景物料。' },
+  { title: '校园活动视觉', category: '活动视觉', cover: 'campus-event-cover', pages: [7], description: '围绕开学礼、校园活动与赛事主题，设计主视觉、导览、展板与其他场景物料。' },
   { title: '趣探运动会AIGC全链路生成', category: 'AIGC 应用', categoryLabel: 'AIGC应用', featured: true, cover: 'sports-day-cover', pages: [33], description: '从运动会主视觉和角色设计，到赛事场景与文创衍生，展示趣探运动会的 AIGC 全链路生成。' },
-  { title: '七大学院徽章', category: '文创与包装', cover: 'academy-badge-cover', mobileCover: true, pages: [11], description: '用学院符号、宇宙元素与鲲鹏 IP 建立系列徽章的设计语言。' },
+  { title: '七大学院徽章', category: '文创与包装', cover: 'academy-badge-cover', pages: [11], description: '用学院符号、宇宙元素与鲲鹏 IP 建立系列徽章的设计语言。' },
   { title: '鼎文咖啡 VI', category: '文创与包装', cover: 'p14', pages: [12, 13, 14, 15, 16], description: '将咖啡工序提炼为几何图形，并应用到品牌视觉、包装和周边。' },
   { title: '校园主题插画', category: '文创与包装', cover: 't17', pages: [17], description: '从校园建筑与景观出发，结合学校育人素养关键词，创作可跨物料使用的主题插画。' },
   { title: '地产与商业品牌提案', category: '项目提案', cover: 'p19', pages: [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32], description: '收录地产和商业项目的提案视觉，包括标志、海报及空间展示。' },
@@ -230,7 +257,7 @@ function showCase(project) {
     const figure = document.createElement('figure');
     const picture = document.createElement('picture');
     const mobile = document.createElement('source');
-    mobile.media = '(max-width: 760px), (max-width: 1024px) and (pointer: coarse)';
+    mobile.media = mobileArtworkMedia;
     const assetVersion = refreshedCasePages.has(page) ? '?v=14' : '';
     mobile.srcset = 'media/mobile/p' + page + '.webp' + assetVersion;
     const img = new Image();
@@ -263,16 +290,12 @@ function renderProjects(category) {
     img.alt = '';
     img.loading = 'lazy';
     img.decoding = 'async';
-    if (project.mobileCover) {
-      const picture = document.createElement('picture');
-      const mobile = document.createElement('source');
-      mobile.media = '(max-width: 760px), (max-width: 1024px) and (pointer: coarse)';
-      mobile.srcset = 'media/mobile/' + project.cover + '.webp';
-      picture.append(mobile, img);
-      visual.append(picture);
-    } else {
-      visual.append(img);
-    }
+    const picture = document.createElement('picture');
+    const mobile = document.createElement('source');
+    mobile.media = mobileArtworkMedia;
+    mobile.srcset = 'media/mobile/' + project.cover + '.webp';
+    picture.append(mobile, img);
+    visual.append(picture);
     img.src = 'media/' + project.cover + '.webp' + (updatedCover ? '?v=14' : '');
     const title = document.createElement('strong');
     title.textContent = project.title;
