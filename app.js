@@ -208,7 +208,8 @@ motion.addEventListener('change', () => {
 const cases = [
   { title: '鼎文小鲲鹏', category: 'IP 形象与衍生', cover: 'p4', pages: [4, 5, 6], description: '校园吉祥物形象迭代，从角色设定、表情与三视图延展到场景及衍生应用。' },
   { title: '校园活动视觉', category: '活动视觉', cover: 't7', pages: [7], description: '围绕开学礼、校园活动与赛事主题，设计主视觉、导览、展板与其他场景物料。' },
-  { title: '游泳赛事主视觉', category: 'AIGC 应用', cover: 't10', pages: [10], description: '使用 AIGC 探索风格和氛围，结合人工筛选、二次创作与细化完成主视觉。' },
+  { title: '趣探运动会AIGC全链路生成', category: 'AIGC 应用', categoryLabel: 'AIGC应用', featured: true, cover: 'sports-day-cover', pages: [33], description: '从运动会主视觉和角色设计，到赛事场景与文创衍生，展示趣探运动会的 AIGC 全链路生成。' },
+  { title: '游泳赛事主视觉', category: 'AIGC 应用', categoryOnly: true, cover: 't10', pages: [10], description: '使用 AIGC 探索风格和氛围，结合人工筛选、二次创作与细化完成主视觉。' },
   { title: '七大学院徽章', category: '文创与包装', cover: 't11', pages: [11], description: '用学院符号、宇宙元素与鲲鹏 IP 建立系列徽章的设计语言。' },
   { title: '鼎文咖啡 VI', category: '文创与包装', cover: 'p14', pages: [12, 13, 14, 15, 16], description: '将咖啡工序提炼为几何图形，并应用到品牌视觉、包装和周边。' },
   { title: '校园主题插画', category: '文创与包装', cover: 't17', pages: [17], description: '从校园建筑与景观出发，结合学校育人素养关键词，创作可跨物料使用的主题插画。' },
@@ -218,10 +219,11 @@ const filters = document.querySelector('#filters');
 const gallery = document.querySelector('#projects');
 const dialog = document.querySelector('#detail');
 
-const caseImageSizes = {"4":[2880,1620],"5":[2880,1620],"6":[2880,5027],"7":[2880,8313],"8":[2880,1923],"9":[2880,1920],"10":[2880,2300],"11":[2880,6782],"12":[2880,6889],"13":[2875,1617],"14":[2875,1617],"15":[2875,1617],"16":[2875,1593],"17":[2880,5019],"18":[2880,824],"19":[2880,1620],"20":[2880,1620],"21":[2880,1620],"22":[2880,1620],"23":[2880,1620],"24":[2880,1620],"25":[2880,1620],"26":[2880,1620],"27":[2880,1620],"28":[2880,1620],"29":[2880,1620],"30":[2880,1620],"31":[2880,1620],"32":[2880,1620]};
+const refreshedCasePages = new Set([6, 7, 10]);
+const caseImageSizes = {"4":[2880,1620],"5":[2880,1620],"6":[2160,3770],"7":[2160,6196],"8":[2880,1923],"9":[2880,1920],"10":[2880,2511],"11":[2880,6782],"12":[2880,6889],"13":[2875,1617],"14":[2875,1617],"15":[2875,1617],"16":[2875,1593],"17":[2880,5019],"18":[2880,824],"19":[2880,1620],"20":[2880,1620],"21":[2880,1620],"22":[2880,1620],"23":[2880,1620],"24":[2880,1620],"25":[2880,1620],"26":[2880,1620],"27":[2880,1620],"28":[2880,1620],"29":[2880,1620],"30":[2880,1620],"31":[2880,1620],"32":[2880,1620],"33":[1729,9028]};
 
 function showCase(project) {
-  document.querySelector('#case-category').textContent = project.category;
+  document.querySelector('#case-category').textContent = project.categoryLabel ?? project.category;
   document.querySelector('#case-title').textContent = project.title;
   document.querySelector('#case-description').textContent = project.description;
   document.querySelector('#case-images').replaceChildren(...project.pages.map((page, index) => {
@@ -229,7 +231,8 @@ function showCase(project) {
     const picture = document.createElement('picture');
     const mobile = document.createElement('source');
     mobile.media = '(max-width: 760px), (max-width: 1024px) and (pointer: coarse)';
-    mobile.srcset = 'media/mobile/p' + page + '.webp';
+    const assetVersion = refreshedCasePages.has(page) ? '?v=14' : '';
+    mobile.srcset = 'media/mobile/p' + page + '.webp' + assetVersion;
     const img = new Image();
     const [width, height] = caseImageSizes[page];
     img.width = width;
@@ -239,7 +242,7 @@ function showCase(project) {
     img.fetchPriority = index === 0 ? 'high' : 'low';
     img.decoding = 'async';
     picture.append(mobile, img);
-    img.src = 'media/p' + page + '.webp';
+    img.src = 'media/p' + page + '.webp' + assetVersion;
     figure.append(picture);
     return figure;
   }));
@@ -249,25 +252,32 @@ function showCase(project) {
 function renderProjects(category) {
   gallery.classList.toggle('is-all', category === '全部');
   gallery.classList.toggle('is-packaging', category === '文创与包装');
-  gallery.replaceChildren(...cases.filter((project) => category === '全部' || project.category === category).map((project) => {
+  gallery.replaceChildren(...cases.filter((project) => category === '全部' ? !project.categoryOnly : project.category === category).map((project) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'project';
     const visual = document.createElement('span');
     visual.className = 'project-visual';
     const img = new Image();
-    img.src = 'media/' + project.cover + '.webp';
+    const updatedCover = project.cover === 't7' || project.cover === 't10';
+    img.src = 'media/' + project.cover + '.webp' + (updatedCover ? '?v=14' : '');
     img.alt = '';
     img.loading = 'lazy';
     visual.append(img);
     const title = document.createElement('strong');
     title.textContent = project.title;
     const tag = document.createElement('small');
-    tag.textContent = project.category;
+    tag.textContent = project.categoryLabel ?? project.category;
     const caption = document.createElement('span');
     caption.className = 'project-caption';
     caption.append(title, tag);
     button.append(visual, caption);
+    if (project.featured) {
+      const label = document.createElement('span');
+      label.className = 'project-featured';
+      label.textContent = '重点推荐';
+      button.append(label);
+    }
     button.addEventListener('click', () => showCase(project));
     return button;
   }));

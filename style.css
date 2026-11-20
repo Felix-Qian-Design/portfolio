@@ -134,3 +134,5 @@ dialog{background:#111722;color:var(--ink);border:1px solid var(--rim);width:min
 .curtain-all{position:absolute;z-index:3;left:50%;bottom:2%;transform:translateX(-50%);border:1px solid #b1ddff64;border-radius:999px;background:#0b182b;color:#edf7ff;padding:.18em .85em;font-size:clamp(11px,1.15vw,15px);white-space:nowrap}
 .curtain-all:hover{border-color:var(--accent);box-shadow:0 0 12px #49c9ff52}
 .work-section.is-opening .curtain-all{opacity:0}
+
+.project-featured{position:absolute;z-index:2;top:12px;left:12px;border:1px solid #dff4b575;border-radius:999px;padding:3px 10px;background:#192915e8;color:#edffcf;font-size:clamp(11px,1vw,14px);font-weight:650}
